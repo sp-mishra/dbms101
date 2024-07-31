@@ -1,2 +1,2 @@
-# zerodb
-A database management system for learning how dbms works
+# Introduction
+dbms101 is a database management system for learning how DBMS works
