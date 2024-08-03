@@ -1,0 +1,24 @@
+[submodule "third_party/spdlog"]
+	path = third_party/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "third_party/json"]
+	path = third_party/json
+	url = https://github.com/nlohmann/json.git
+[submodule "third_party/StringZilla"]
+	path = third_party/StringZilla
+	url = https://github.com/ashvardanian/StringZilla.git
+[submodule "third_party/mio"]
+	path = third_party/mio
+	url = https://github.com/vimpunk/mio.git
+[submodule "third_party/Catch2"]
+	path = third_party/Catch2
+	url = https://github.com/catchorg/Catch2.git
+[submodule "third_party/EventBus"]
+	path = third_party/EventBus
+	url = https://github.com/gelldur/EventBus.git
+[submodule "third_party/fast_io"]
+	path = third_party/fast_io
+	url = https://github.com/cppfastio/fast_io.git
+[submodule "third_party/xxHash"]
+	path = third_party/xxHash
+	url = https://github.com/Cyan4973/xxHash.git
