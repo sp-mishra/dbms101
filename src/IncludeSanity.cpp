@@ -47,7 +47,7 @@ void test_event_bus() {
         long value = 0;
     };
 
-    groklab::SimpleEventBus simple_event_bus;
+    g::SimpleEventBus simple_event_bus;
 
     // Register a listener for MyEvent
     simple_event_bus.addListner<TestEvent>([](const auto& event) {
