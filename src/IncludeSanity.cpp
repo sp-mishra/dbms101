@@ -1,5 +1,5 @@
 #include <iostream>
-#include <spdlog/spdlog.h>
+
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <mio.hpp>
@@ -7,15 +7,20 @@
 #include <hash.hpp>
 #include <nanobench.h>
 
+#include "Log.hpp"
 #include "Math.hpp"
-#include "SimpleEvent.hpp"
+#include "SimpleEventBus.hpp"
+#include <readerwriterqueue.h>
+
+using namespace moodycamel;
 
 using json = nlohmann::json;
+namespace g = groklab;
 
 
 void test_json() {
     // create object from string literal
-    json j = "{ \"happy\": true, \"pi\": 3.141 }"_json;
+    json j = R"({ "happy": true, "pi": 3.141 })";
 
     // or even nicer with a raw string literal
     auto j2 = R"(
@@ -24,15 +29,15 @@ void test_json() {
     "pi": 3.141
   }
 )"_json;
-    spdlog::info(j.dump());
+    g::info(j.dump());
 }
 
 void test_hash() {
-    spdlog::info("hash: {}", groklab::hash("Hello, world!"));
+    g::info("hash: {}", g::hash("Hello, world!"));
 }
 
 void test_benchmark() {
-    ankerl::nanobench::Bench().epochs(3).run("sleep 100ms", [&] {
+    ankerl::nanobench::Bench().epochs(3).run("sleep 100ms", [] {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 });
 }
@@ -42,24 +47,46 @@ void test_event_bus() {
         long value = 0;
     };
 
-    groklab::SimpleEvent simple_event;
+    groklab::SimpleEventBus simple_event_bus;
 
     // Register a listener for MyEvent
-    auto handle = simple_event.listen<TestEvent>([](const auto& event) {
-        spdlog::info("Received Event: {}", event.value);
+    simple_event_bus.addListner<TestEvent>([](const auto& event) {
+        g::info("Received Event: {}", event.value);
     });
 
-    // Dispatch an event
-    simple_event.dispatch(TestEvent{groklab::randomNumber()});  // Prints "Received MyEvent: 11"
+    // // Dispatch an event
+    simple_event_bus.send(TestEvent{g::randomNumber()});  // Prints "Received MyEvent: 11"
+    simple_event_bus.enqueue(TestEvent{g::randomNumber()});  // Prints "Received MyEvent: 11"
+    //
+    // // Queue events
+    // simple_event_bus.queue(TestEvent{g::randomNumber()});
+    // simple_event_bus.queue(TestEvent{333});
+    // simple_event_bus.queue(TestEvent{});
+    // simple_event_bus.process();
+    // spdlog::info("Nothing should be printed after this line");
+    // simple_event_bus.remove(handle);         // Remove the listener
+    // simple_event_bus.dispatch(TestEvent{g::randomNumber()});  // No listener, so nothing happens
+}
 
-    // Queue events
-    simple_event.queue(TestEvent{groklab::randomNumber()});
-    simple_event.queue(TestEvent{333});
-    simple_event.queue(TestEvent{});
-    simple_event.process();
+void test_atomic_queue() {
+    ReaderWriterQueue<int> q(100);       // Reserve space for at least 100 elements up front
 
-    simple_event.remove(handle);         // Remove the listener
-    simple_event.dispatch(TestEvent{groklab::randomNumber()});  // No listener, so nothing happens
+    q.enqueue(17);                       // Will allocate memory if the queue is full
+    bool succeeded = q.try_enqueue(18);  // Will only succeed if the queue has an empty slot (never allocates)
+    assert(succeeded);
+
+    int number;
+    succeeded = q.try_dequeue(number);  // Returns false if the queue was empty
+
+    assert(succeeded && number == 17);
+
+    // You can also peek at the front item of the queue (consumer only)
+    int const* front = q.peek();
+    assert(*front == 18);
+    succeeded = q.try_dequeue(number);
+    assert(succeeded && number == 18);
+    front = q.peek();
+    assert(front == nullptr);           // Returns nullptr if the queue was empty
 }
 
 int check_sanity() {
@@ -68,6 +95,7 @@ int check_sanity() {
     test_json();
     test_hash();
     test_event_bus();
+    test_atomic_queue();
     test_benchmark();
     return 0;
 }

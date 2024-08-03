@@ -31,6 +31,7 @@ add_subdirectory(third_party/spdlog)
 add_subdirectory(third_party/Catch2)
 add_subdirectory(third_party/json)
 add_subdirectory(third_party/nanobench)
+add_subdirectory(third_party/readerwriterqueue)
 
 link_directories(/usr/local/lib)
 add_executable(${PROJECT_NAME}
@@ -38,8 +39,9 @@ add_executable(${PROJECT_NAME}
         third_party/xxHash/xxhash.c
         src/IncludeSanity.cpp
         include/hash.hpp
-        include/SimpleEvent.hpp
+        include/SimpleEventBus.hpp
         include/Math.hpp
+        include/Log.hpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -47,4 +49,5 @@ target_link_libraries(${PROJECT_NAME}
         Catch2::Catch2
         nlohmann_json::nlohmann_json
         nanobench
+        readerwriterqueue
 )

@@ -5,6 +5,7 @@
 #define XXH_INLINE_ALL
 #define XXH_STATIC_LINKING_ONLY
 #define XXH_ENABLE_AUTOVECTORIZE
+#include <sstream>
 #include <string>
 #include <xxhash.h>
 
