@@ -19,3 +19,6 @@
 [submodule "third_party/StringZilla"]
 	path = third_party/StringZilla
 	url = https://github.com/ashvardanian/StringZilla.git
+[submodule "third_party/nanobench"]
+	path = third_party/nanobench
+	url = https://github.com/martinus/nanobench.git

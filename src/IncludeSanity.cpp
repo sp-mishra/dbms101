@@ -5,6 +5,7 @@
 #include <mio.hpp>
 #include <fast_io.h>
 #include <hash.hpp>
+#include <nanobench.h>
 
 #include "Math.hpp"
 #include "SimpleEvent.hpp"
@@ -28,6 +29,12 @@ void test_json() {
 
 void test_hash() {
     spdlog::info("hash: {}", groklab::hash("Hello, world!"));
+}
+
+void test_benchmark() {
+    ankerl::nanobench::Bench().epochs(3).run("sleep 100ms", [&] {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+});
 }
 
 void test_event_bus() {
@@ -61,5 +68,6 @@ int check_sanity() {
     test_json();
     test_hash();
     test_event_bus();
+    test_benchmark();
     return 0;
 }

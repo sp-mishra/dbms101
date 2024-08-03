@@ -30,6 +30,7 @@ include_directories(include)
 add_subdirectory(third_party/spdlog)
 add_subdirectory(third_party/Catch2)
 add_subdirectory(third_party/json)
+add_subdirectory(third_party/nanobench)
 
 link_directories(/usr/local/lib)
 add_executable(${PROJECT_NAME}
@@ -45,4 +46,5 @@ target_link_libraries(${PROJECT_NAME}
         spdlog::spdlog
         Catch2::Catch2
         nlohmann_json::nlohmann_json
+        nanobench
 )
