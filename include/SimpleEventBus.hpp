@@ -18,7 +18,7 @@ namespace groklab {
         using ListenersType = std::vector<std::function<void(const void *)> >;
         using QueueFunction = std::function<void()>;
         static constexpr size_t MIN_QUEUE_SIZE = 100;
-        static constexpr size_t SLEET_TIME = 10;
+        static constexpr size_t SLEET_TIME = 100;
         std::map<std::type_index, ListenersType> listenersByType;
         std::unique_ptr<moodycamel::ReaderWriterQueue<QueueFunction>> messageQueue;
         std::thread backgroundThread;
@@ -79,15 +79,19 @@ namespace groklab {
             });
         }
 
+        void processQueued() const {
+            // Iterate over the message queue and process each message
+            QueueFunction message;
+            while (messageQueue->try_dequeue(message)) {
+                message();
+            }
+        }
+
     private:
         void process() const {
             while (running) {
-                // Iterate over the message queue and process each message
-                QueueFunction message;
-                while (messageQueue->try_dequeue(message)) {
-                    message();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(SLEET_TIME)); // Sleep to prevent busy-waiting
-                }
+                processQueued();
+                std::this_thread::sleep_for(std::chrono::milliseconds(SLEET_TIME)); // Sleep to prevent busy-waiting
             }
         }
     };
