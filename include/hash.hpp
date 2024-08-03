@@ -8,7 +8,7 @@
 #include <string>
 #include <xxhash.h>
 
-namespace grklab {
+namespace groklab {
     template<typename T>
     uint64_t hash(const T& input, const std::size_t numberof_buckets = 100) {
         uint64_t hash_value = {};

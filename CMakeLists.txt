@@ -30,20 +30,19 @@ include_directories(include)
 add_subdirectory(third_party/spdlog)
 add_subdirectory(third_party/Catch2)
 add_subdirectory(third_party/json)
-add_subdirectory(third_party/EventBus/lib)
 
 link_directories(/usr/local/lib)
 add_executable(${PROJECT_NAME}
         main.cpp
         third_party/xxHash/xxhash.c
-#        third_party/xxHash/xxh_x86dispatch.c
         src/IncludeSanity.cpp
         include/hash.hpp
+        include/SimpleEvent.hpp
+        include/Math.hpp
 )
 
 target_link_libraries(${PROJECT_NAME}
         spdlog::spdlog
         Catch2::Catch2
         nlohmann_json::nlohmann_json
-        Dexode::EventBus
 )
