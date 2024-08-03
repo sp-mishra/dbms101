@@ -6,25 +6,28 @@
 #include <algorithm>
 #include <functional>
 #include <list>
-#include <set>
 #include <map>
 #include <typeindex>
 #include <readerwriterqueue.h>
+#include <thread>
+#include <vector>
 
 namespace groklab {
     // Inspired by https://github.com/KyrietS/tinyevents.git
     class SimpleEventBus {
         using ListenersType = std::vector<std::function<void(const void *)> >;
-        std::map<std::type_index, ListenersType> listenersByType;
-        std::map<std::type_index, void *> messageQueue;
+        using QueueFunction = std::function<void()>;
         static constexpr size_t MIN_QUEUE_SIZE = 100;
         static constexpr size_t SLEET_TIME = 10;
+        std::map<std::type_index, ListenersType> listenersByType;
+        std::unique_ptr<moodycamel::ReaderWriterQueue<QueueFunction>> messageQueue;
         std::thread backgroundThread;
         std::atomic<bool> running{true};
 
     public:
         SimpleEventBus() {
             backgroundThread = std::thread(&SimpleEventBus::process, this);
+            messageQueue = std::make_unique<moodycamel::ReaderWriterQueue<QueueFunction>>(MIN_QUEUE_SIZE);
         }
 
         ~SimpleEventBus() {
@@ -34,7 +37,8 @@ namespace groklab {
             }
         }
 
-        SimpleEventBus(SimpleEventBus &&) noexcept = default;
+        SimpleEventBus(SimpleEventBus &&) noexcept {
+        }
 
         SimpleEventBus(const SimpleEventBus &) = delete;
 
@@ -48,20 +52,21 @@ namespace groklab {
                 const auto message = static_cast<const T *>(msg);
                 listener(*message);
             });
-            auto &queue = messageQueue[typeIndex];
-            if (queue == nullptr) {
-                queue = new moodycamel::ReaderWriterQueue<T>(MIN_QUEUE_SIZE);
+        }
+
+        template<typename T>
+        void sendSync(const T &msg) {
+            const auto typeIndex = std::type_index(typeid(T));
+            const auto &listenerWrappers = listenersByType[typeIndex];
+            for (const auto &listenerWrapper: listenerWrappers) {
+                listenerWrapper(&msg);
             }
         }
 
         template<typename T>
         void send(const T &msg, bool sync = true) {
-            const auto typeIndex = std::type_index(typeid(T));
             if (sync) {
-                const auto &listenerWrappers = listenersByType[typeIndex];
-                for (const auto &listenerWrapper: listenerWrappers) {
-                    listenerWrapper(&msg);
-                }
+                sendSync(msg);
             } else {
                 enqueue(&msg);
             }
@@ -69,16 +74,20 @@ namespace groklab {
 
         template<typename T>
         void enqueue(const T &msg) {
-            const auto typeIndex = std::type_index(typeid(T));
-            auto &queue = messageQueue[typeIndex];
-            auto *q = static_cast<moodycamel::ReaderWriterQueue<T> *>(queue);
-            q->try_enqueue(msg);
+            messageQueue->enqueue([this, msg]() {
+                sendSync(msg);
+            });
         }
 
     private:
-        void process() {
+        void process() const {
             while (running) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(SLEET_TIME)); // Sleep to prevent busy-waiting
+                // Iterate over the message queue and process each message
+                QueueFunction message;
+                while (messageQueue->try_dequeue(message)) {
+                    message();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(SLEET_TIME)); // Sleep to prevent busy-waiting
+                }
             }
         }
     };

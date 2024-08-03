@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include <fstream>
 #include <nlohmann/json.hpp>
 #include <mio.hpp>
 #include <fast_io.h>
@@ -44,6 +43,7 @@ void test_benchmark() {
 
 void test_event_bus() {
     struct TestEvent {
+        std::string name = "TestEvent";
         long value = 0;
     };
 
@@ -51,21 +51,14 @@ void test_event_bus() {
 
     // Register a listener for MyEvent
     simple_event_bus.addListner<TestEvent>([](const auto& event) {
-        g::info("Received Event: {}", event.value);
+        g::info("Event Name: {}, Value: {}", event.name, event.value);
     });
 
     // // Dispatch an event
-    simple_event_bus.send(TestEvent{g::randomNumber()});  // Prints "Received MyEvent: 11"
-    simple_event_bus.enqueue(TestEvent{g::randomNumber()});  // Prints "Received MyEvent: 11"
-    //
-    // // Queue events
-    // simple_event_bus.queue(TestEvent{g::randomNumber()});
-    // simple_event_bus.queue(TestEvent{333});
-    // simple_event_bus.queue(TestEvent{});
-    // simple_event_bus.process();
-    // spdlog::info("Nothing should be printed after this line");
-    // simple_event_bus.remove(handle);         // Remove the listener
-    // simple_event_bus.dispatch(TestEvent{g::randomNumber()});  // No listener, so nothing happens
+    simple_event_bus.send(TestEvent{"Sync", g::randomNumber()});
+    for(int i = 0; i < 10; i++) {
+        simple_event_bus.enqueue(TestEvent{std::format("ASync: {}", i), g::randomNumber()});
+    }
 }
 
 void test_atomic_queue() {
